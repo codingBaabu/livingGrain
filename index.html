@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<style>
+
+body {
+  margin:0;
+  background-color:black;
+  margin:0;
+  padding:0;
+
+}
+canvas {
+  position: absolute;
+    top: 50%;
+    left: 50%;
+    -moz-transform: translateX(-50%) translateY(-50%);
+    -webkit-transform: translateX(-50%) translateY(-50%);
+    transform: translateX(-50%) translateY(-50%);
+}
+</style>
+</head>
+<body onload="startGame()">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.1/howler.min.js" integrity="sha512-L6Z/YtIPQ7eU3BProP34WGU5yIRk7tNHk7vaC2dB1Vy1atz6wl9mCkTPPZ2Rn1qPr+vY2mZ9odZLdGYuaBk7dQ==" crossorigin="anonymous"></script>
+<script>
+
+  //INIT -------------------------------------------------
+
+  var sfx = {
+    navigate:new Howl({
+      src:[
+        '/navigate.ogg'
+      ]
+    }),
+    select:new Howl({
+      src:[
+        '/select.ogg'
+      ]
+    }), 
+    death:new Howl({
+      src:[
+        '/deathSound.mp3'
+      ]
+    }), 
+    fireball:new Howl({
+      src:[
+        '/burning.mp3'
+      ],
+      volume:0.8
+    }),
+    gotHit:new Howl({
+      src:[
+        '/grunt.mp3'
+      ]
+    }),
+    rain:new Howl({
+      src:[
+        '/rain.mp3'
+      ]
+    }),
+    chirping:new Howl({
+      src:[
+        '/chirping.mp3'
+      ]
+    }),
+    gameMusic:new Howl({
+      src:[
+        '/gameMusic.mp3'
+      ]
+    }),
+    menuMusic:new Howl({
+      src:[
+        '/menuMusic.mp3',
+      ],
+      volume:1
+    }),
+    running:new Howl({
+      src:[
+        '/running.mp3'
+      ]
+    }),
+    win:new Howl({
+      src:[
+        '/win.mp3'
+      ]
+    })
+  }
+  let homeScreenStart = {
+    game:false,
+    currentOption:0,
+    switchOption:false,
+    x:650,
+    y:50,
+    goToHome:false
+  }
+
+  function startGame(){
+    startCheck=true;
+    myGameArea.start();
+    gameBackground = new background('/gameBackground.png', 0, 0, 1024, 1024, 0, 0, myGameArea.canvas.width, myGameArea.canvas.height);
+    monsoonBackground = new background('/monsoon.jpeg', 0, 0, 1024, 1024, -1024, 0, myGameArea.canvas.width, myGameArea.canvas.height);
+
+    wheatImg = new Image();
+    wheatImg.src = '/wheat.png';
+    fireballs = [];
+    temperatureBar = new tempBar(50, 20, 200, 400, 100, 100);
+
+  }
+
+  //START SCREEN -----------------------------------------
+  function startScreen(){
+    myGameArea.adjust();
+
+    let ctx = myGameArea.context;
+    drawStartScreen();
+
+    if(myGameArea.keyState[32]){
+      sfx.select.play();
+      clearInterval(myGameArea.interval);
+      setTimeout(()=> {
+        myGameArea.interval = setInterval(homeScreen, 20);      
+      }, 500);
+      
+    }
+  }
+
+  function drawStartScreen(){
+    ctx=myGameArea.context;
+    img = new Image();
+    img.src = './startScreen.jpeg';
+    ctx.drawImage(img, 0, 0, 4873, 2744,  0, 0, myGameArea.canvas.width, myGameArea.canvas.height);
+  }
+
+  //HOME SCREEN ------------------------------------------
+
+  function homeScreen(){
+    myGameArea.adjust();
+
+  let ctx = myGameArea.context;
+  let gameOption=[0, 1, 2];
+
+
+  drawHomeScreen();
+
+  if(!sfx.menuMusic.playing(sfx.menuMusic)){
+    sfx.menuMusic.play();
+    sfx.menuMusic.stop();
+
+        let menuMusic = sfx.menuMusic.play();
+      }
+
+  if(myGameArea.keyState[87] && homeScreenStart.switchOption==true){
+    sfx.navigate.play();
+
+    homeScreenStart.switchOption= false;
+    homeScreenStart.currentOption--;
+  } else if(myGameArea.keyState[83] && homeScreenStart.switchOption==true){
+    sfx.navigate.play();
+
+    homeScreenStart.switchOption= false;
+    homeScreenStart.currentOption++;  
+
+  }
+
+  if(homeScreenStart.currentOption < 0){
+    homeScreenStart.currentOption=1;
+  } else if(homeScreenStart.currentOption > 1){
+    homeScreenStart.currentOption=0;
+  }
+
+  if(myGameArea.keyState[32] && homeScreenStart.currentOption == 0){
+    sfx.select.play();
+
+    setTimeout(()=> {
+      sfx.menuMusic.stop();
+    }, 2000);
+
+    homeScreenStart.game = true;
+    clearInterval(myGameArea.interval);
+    myGameArea.start();
+  } else if(myGameArea.keyState[32] && homeScreenStart.currentOption == 1 && homeScreenStart.switchOption==true){
+    homeScreenStart.switchOption=false;
+    sfx.select.play();
+    clearInterval(myGameArea.interval);
+    myGameArea.interval = setInterval(drawHowToPlay, 20);  
+  }    
+}
+
+function drawHowToPlay(){
+  myGameArea.adjust();
+
+  this.ctx = myGameArea.context;
+  ctx.clearRect(0, 0, myGameArea.canvas.width, myGameArea.canvas.height);
+  
+  ctx.drawImage(wheatImg, 
+      wheatBackground.frameX * wheatBackground.spriteWidth, 
+      wheatBackground.frameY * wheatBackground.spriteHeight,
+      wheatBackground.spriteWidth, wheatBackground.spriteHeight, 
+      0, 0, 
+      ctx.canvas.width, ctx.canvas.height);
+
+      if(wheatBackground.gameFrame % wheatBackground.staggerFrames == 0){
+        if(wheatBackground.frameX < 4){ 
+          wheatBackground.frameX++;
+        } else{
+          wheatBackground.frameX = 0;
+        if(wheatBackground.frameY < 31){
+          wheatBackground.frameY++;
+          } else {
+            wheatBackground.frameY = 0;
+          } 
+        } 
+      }
+      wheatBackground.gameFrame++;
+
+
+  if(homeScreenStart.currentOption == 0){
+    homeScreenStart.y = 257;
+  } else if(homeScreenStart.currentOption == 1){
+    homeScreenStart.y = 300;
+  }
+
+    
+
+    img = new Image();
+    img.src = 'howToPlay.jpeg';
+    ctx.globalAlpha = 0.8;
+    ctx.save();
+    this.ctx.drawImage(img, 0, 0, 1900, 1069,  0, 0, myGameArea.canvas.width, myGameArea.canvas.height);
+    ctx.restore();    
+    setTimeout(()=>{
+      if(myGameArea.keyState[32] && homeScreenStart.switchOption==true){
+      homeScreenStart.switchOption=false;
+      clearInterval(myGameArea.interval);
+      myGameArea.interval = setInterval(homeScreen, 20);  
+    }
+
+    }, 1000);
+}
+
+let wheatBackground = {
+  frameX:0,
+  frameY:0,
+  spriteWidth:800,
+  spriteHeight:450,
+  staggerFrames:5,
+  gameFrame:0
+
+}
+
+function drawHomeScreen(){
+  this.ctx = myGameArea.context;
+  ctx.clearRect(0, 0, myGameArea.canvas.width, myGameArea.canvas.height);
+      
+      ctx.drawImage(wheatImg, 
+      wheatBackground.frameX * wheatBackground.spriteWidth, 
+      wheatBackground.frameY * wheatBackground.spriteHeight,
+      wheatBackground.spriteWidth, wheatBackground.spriteHeight, 
+      0, 0, 
+      ctx.canvas.width, ctx.canvas.height);
+
+      if(wheatBackground.gameFrame % wheatBackground.staggerFrames == 0){
+        if(wheatBackground.frameX < 4){ 
+          wheatBackground.frameX++;
+        } else{
+          wheatBackground.frameX = 0;
+        if(wheatBackground.frameY < 31){
+          wheatBackground.frameY++;
+          } else {
+            wheatBackground.frameY = 0;
+          } 
+        } 
+      }
+      wheatBackground.gameFrame++;
+
+  ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+  ctx.fillRect(0, 0, myGameArea.canvas.width, myGameArea.canvas.height);
+
+  if(homeScreenStart.currentOption == 0){
+    homeScreenStart.y = myGameArea.canvas.height - (25/100 * myGameArea.canvas.height);
+  } else if(homeScreenStart.currentOption == 1){
+    homeScreenStart.y = myGameArea.canvas.height - (14.8/100 * myGameArea.canvas.height);
+  }
+
+  homeScreenStart.x =  myGameArea.canvas.width - (30/100 * myGameArea.canvas.width);
+
+  ctx.fillStyle = "rgba(250, 150, 30, 0.7)";
+  this.ctx.fillRect(homeScreenStart.x,
+                    homeScreenStart.y, 
+                    myGameArea.canvas.width - (70/100 * myGameArea.canvas.width), 
+                    myGameArea.canvas.width - (95.4/100 * myGameArea.canvas.width));
+
+    ctx.fillStyle="white";
+    ctx.font = `${myGameArea.canvas.width - (97.5/100 * myGameArea.canvas.width)}px Georgia`;
+    ctx.fillText(`Play`, 
+                myGameArea.canvas.width - (17/100 * myGameArea.canvas.width),
+                myGameArea.canvas.height - (19.5/100 * myGameArea.canvas.height));
+    ctx.fillText(`How to play`, 
+    myGameArea.canvas.width - (17/100 * myGameArea.canvas.width),
+                myGameArea.canvas.height - (9.3/100 * myGameArea.canvas.height));
+}
+
+//OBJECTS ------------------------------------------------
+
+  let myGameArea = {
+    canvas:document.createElement('canvas'),
+    keyState:{},
+    start:function(){
+      this.canvas.width=document.documentElement.clientWidth;
+      this.canvas.height=(document.documentElement.clientWidth/16)*9-8;
+      this.context = this.canvas.getContext('2d'),
+      
+      document.body.insertBefore(this.canvas, document.body.childNodes[0]);
+      this.frameNo = 0;
+      
+      if(homeScreenStart.game){
+        this.interval = setInterval(update, 20);
+      } else if(startCheck){
+        this.interval = setInterval(startScreen, 20);
+      } else {
+        this.interval = setInterval(homeScreen, 20);
+      }
+      addEventListener("keydown", function(e){
+        if (!homeScreenStart.game) {
+          homeScreenStart.switchOption = true;
+      }
+        myGameArea.keyState[e.keyCode] = true;
+      });
+      addEventListener("keyup", function(e){
+        myGameArea.keyState[e.keyCode] = false;       
+      });
+
+      player.relativeX = 46;
+    },
+    clear:function(){
+      this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    },
+    adjust:function(){
+      this.canvas.width=document.documentElement.clientWidth;
+      this.canvas.height=(document.documentElement.clientWidth/16)*9-8;
+    }
+  }
+
+  function everyInterval(n) {
+    if((myGameArea.frameNo / n) % 1 == 0){
+      return true;
+    } 
+    return false;
+  }
+
+  let player = {
+    playerImage:new Image(),
+    spriteWidth:946,
+    spriteHeight:821,
+    frameX:0,
+    frameY:0,
+    gameFrame:0,
+    width:myGameArea.canvas.width ,
+    height:myGameArea.canvas.height,
+    x:0,
+    relativeX:0,
+    y:myGameArea.canvas.height - (1/100 * myGameArea.canvas.height),
+    gameFrame:0,
+    staggerFrames:2,
+    maxPics:6,
+    facingRight:true,
+
+    drawPiece:function(){
+      this.ctx = myGameArea.context;
+    
+      if(myGameArea.keyState[65]){
+        maxPics = 12;
+        this.facingRight=false;
+        this.playerImage.src = `walking/skeleton-02_walking_${this.frameX}.png`;
+      } else if(myGameArea.keyState[68]){
+        this.facingRight=true;
+        maxPics = 12;
+        this.playerImage.src = `walking_right/skeleton-02_walking_${this.frameX}_right.png`;
+      } else if(this.facingRight){
+        maxPics = 6;
+        this.playerImage.src = `idle_right/skeleton-01_idle_${this.frameX}.png`;
+      } else {
+        maxPics = 6;
+        this.playerImage.src = `idle/skeleton-01_idle_${this.frameX}.png`;
+      }
+    
+      myGameArea.context.drawImage(
+        this.playerImage, 
+        0, 0,
+        this.spriteWidth, this.spriteHeight, 
+        this.x, this.y, this.width, this.height);
+
+      if(this.gameFrame % this.staggerFrames == 0){
+        if(this.frameX < this.maxPics) this.frameX++;
+        else this.frameX = 0;
+      }
+      this.gameFrame++;
+    }
+  }
+
+  let dayManager = {
+  day:1,
+  fireballCount:10,
+  interval:30,
+  monsoonInterval:30,
+  morning:true,
+  addWaterPoints:0,
+  noMoreDays:false,
+  announceDay:true,
+  playRainSound:true,
+  raindrops:[],
+  setDay:function(){
+    dayManager.playRainSound=true;
+    sfx.rain.stop();
+    sfx.chirping.play();
+
+    if(this.day==7){
+      if(this.noMoreDays == false){
+        this.noMoreDays = true;
+      }
+    } else {
+    this.day++;
+    this.announceDay = true;
+    this.fireballCount = this.day * 10;
+    this.interval-=4;
+    }
+  },
+  drawDayText:function(){
+    if(dayManager.announceDay == false){
+      ctx=myGameArea.context;
+      ctx.font = `${myGameArea.canvas.width - (96/100 * myGameArea.canvas.width)}px Georgia`;
+      ctx.fillText(`DAY ${this.day}`, 
+      myGameArea.canvas.width - (13/100 * myGameArea.canvas.width), 
+      myGameArea.canvas.height - (92/100 * myGameArea.canvas.height));
+    }
+  },
+  monsoon:function(){
+    if(this.playRainSound){
+      this.playRainSound=false;
+      sfx.rain.play();
+    }
+    if((myGameArea.frameNo == 1 || everyInterval(this.monsoonInterval))){
+      this.addWaterPoints++;
+
+      if(temperatureBar.firePoints<99){
+        temperatureBar.firePoints+=2;
+      } else if(temperatureBar.waterPoints<99){
+        temperatureBar.waterPoints+=2;
+      }
+
+
+      if(this.addWaterPoints >= 15){
+        this.addWaterPoints = 0;
+        dayManager.morning=true; 
+        dayManager.raindrops=[];
+        dayManager.setDay();
+
+      }
+    }
+  },
+  drawRain:function(){
+    ctx = myGameArea.context;
+    ctx.fillStyle = "#269ccc";
+    dayManager.raindrops.push(new rainDrop());
+    
+    for(i=0; i < dayManager.raindrops.length; i++){
+      dayManager.raindrops[i].drawPiece();
+      dayManager.raindrops[i].fall();
+    }
+  },
+  continueDay:function(){
+    setTimeout(() => {
+      }, 2000);
+  }
+}
+
+let credits = {
+  victory:function(){
+    ctx=myGameArea.context;
+    ctx.fillStyle="red";
+    ctx.fillText(`VICTORY`, 460, 20);
+  }
+}
+
+  //FUNCTION CONSTRUCTORS --------------------------------------------------------
+  function fireball(width, height, x, y, image){
+    this.x = x;
+    this.y = y;
+    this.width = width;
+    this.height = height;
+    this.image = image;
+    this.frameX=0;
+    this.frameY=0;
+    this.spriteWidth=483;
+    this.spriteHeight=665.3;
+    this.staggerFrames = 1;
+    this.gameFrame = 0;
+    
+
+    this.drawPiece = function(){
+      this.ctx = myGameArea.context;
+
+      img = new Image();
+      img.src = this.image;
+      this.ctx.drawImage(img, this.frameX * this.spriteWidth, this.frameY * this.spriteHeight, this.spriteWidth, this.spriteHeight, this.x, this.y, this.width, this.height);
+
+      if(this.gameFrame % this.staggerFrames == 0){
+        if(this.frameX < 2){ 
+        this.frameX++;
+        } else{
+          this.frameX = 0;
+        if(this.frameY == 0){
+            this.frameY++;
+          } else {
+            this.frameY--;
+          } 
+        } 
+      }
+      this.gameFrame++;
+    }
+  }
+
+  function rainDrop(){
+    this.y = (getRandomX()/10)-200;
+    this.fallSpeed = myGameArea.canvas.height - (97/100 * myGameArea.canvas.height);
+    this.drawPiece = function(){
+    
+      this.ctx = myGameArea.context;
+      this.ctx.fillStyle="59bfff";
+      this.ctx.fillRect(getRandomX(), this.y, 2, getRandomX()/10);
+  
+    }
+  
+    this.fall = function(){
+      this.y+=this.fallSpeed;
+    }
+  }
+
+  function background(image, sx, sy, sWidth, sHeight, x, y, width, height){
+    this.width = width;
+    this.height = height;
+    this.x = x;
+    this.y = y;
+    this.sx = sx;
+    this.sy = sy;
+    this.sWidth = sWidth;
+    this.sHeight = sHeight;
+    this.image = image;
+
+    this.drawPiece = function(){
+      this.ctx = myGameArea.context;
+
+      img = new Image();
+      img.src = this.image;
+      this.ctx.drawImage(img, this.sx, this.sy, this.sWidth, this.sHeight,  this.x, this.y, this.width, this.height);
+    }
+  }
+
+  function tempBar(width, height, x, y, firePoints, waterPoints){
+    this.width = width;
+    this.height = height;
+    this.x = x;
+    this.y = y;
+    this.firePoints=100;
+    this.waterPoints=100;
+    this.showFirePoints=myGameArea.canvas.width - (this.firePoints/100 * myGameArea.canvas.width);
+    this.showWaterPoints=myGameArea.canvas.width - (this.waterdPoints/100 * myGameArea.canvas.width);
+    
+    this.drawPiece = function(){
+      this.showFirePoints = (((1/100) * myGameArea.canvas.width))*this.firePoints/20;
+      this.showWaterPoints = (((1/100) * myGameArea.canvas.width))*this.waterPoints/20;
+      
+      this.ctx = myGameArea.context;
+      this.ctx.fillStyle = "#E12901";
+      this.ctx.fillRect(player.x + myGameArea.canvas.width - (98.5/100 * myGameArea.canvas.width),  
+      myGameArea.canvas.height - (23/100 * myGameArea.canvas.height), 
+      this.showFirePoints, 
+      myGameArea.canvas.height - (98.5/100 * myGameArea.canvas.height));
+     
+      this.ctx = myGameArea.context;
+      this.ctx.fillStyle = "#59bfff";
+      this.ctx.fillRect(player.x + myGameArea.canvas.width - (98.5/100 * myGameArea.canvas.width), 
+      myGameArea.canvas.height - (23/100 * myGameArea.canvas.height), 
+      this.showWaterPoints, 
+      myGameArea.canvas.height - (98.5/100 * myGameArea.canvas.height));  
+    }
+  }
+  
+  function collisionCheck(player, fireball, index){
+    collision = true;
+    compensation = -(myGameArea.canvas.width - (93/100 * myGameArea.canvas.width));
+    if(
+      player.x+player.width  + compensation <fireball.x ||
+      player.x > fireball.x + fireball.width  + compensation ||
+      player.y+player.height + compensation < fireball.y - compensation ||
+      player.y > fireball.y + fireball.height + compensation
+    ){
+      collision = false;
+    }
+    if(collision == true){
+      gotHit(fireball, index);
+    }
+  }
+
+//DEATH -----------------------------------------
+
+  let deathCircle = {
+    radius:0
+  }
+
+  function deathCircleHandler(){
+    sfx.fireball.stop();
+
+    ctx = myGameArea.context;
+
+    ctx.beginPath();
+    ctx.arc(player.x + (player.width/2), player.y + (player.height/2), deathCircle.radius, 0, 2 * Math.PI);
+    ctx.fillStyle = "rgba(150, 50, 50, 0.5)";
+    ctx.fill();
+
+    setTimeout(() => {
+        clearInterval(myGameArea.interval);
+        myGameArea.interval = setInterval(restart, 20);
+    }, 1400);    
+
+  }
+
+  function deathScreen(){
+    ctx = myGameArea.context;
+    ctx.font = `${myGameArea.canvas.width - (86/100 * myGameArea.canvas.width)}px papyrus`;
+    ctx.fillStyle = "black";
+    ctx.fillText(`You Died`, 
+    myGameArea.canvas.width - (95/100 * myGameArea.canvas.width), 
+    myGameArea.canvas.height - (30/100 * myGameArea.canvas.height));
+    
+    ctx.fillStyle = "red";
+    ctx.fillText(`You Died`, 
+    myGameArea.canvas.width - (95/100 * myGameArea.canvas.width), 
+    myGameArea.canvas.height - (30/100 * myGameArea.canvas.height));
+
+    ctx.font = `${myGameArea.canvas.width - (98/100 * myGameArea.canvas.width)}px Georgia`;
+    ctx.fillStyle = "white";
+    ctx.fillText(`(Press space to play again)`, 
+    myGameArea.canvas.width - (60/100 * myGameArea.canvas.width), 
+    myGameArea.canvas.height - (10/100 * myGameArea.canvas.height));
+  }
+
+  function restart(){
+    myGameArea.adjust();
+    myGameArea.clear();
+
+    if(temperatureBar.firePoints<=0){
+      deathScreen();
+    } else {
+      victoryScreen();
+    }
+
+    if(myGameArea.keyState[32]){
+      clearInterval(myGameArea.interval);
+      myGameArea.interval = setInterval(update, 20);
+      temperatureBar.firePoints=100;
+      temperatureBar.waterPoints=100;
+      dayManager.day = 1;
+      dayManager.announceDay = true;
+      fireballs = [];
+      dayManager.fireballCount = 10;
+      dayManager.interval = 30;
+      dayManager.morning = true;
+      deathCircle.radius = 0;
+      victoryCircle.radius = 0;
+
+      player.x = myGameArea.canvas.width/2-(player.width/2);
+      player.relativeX = 46;
+
+      dayManager.noMoreDays = false;
+
+      sfx.rain.stop();
+
+      homeScreenStart.goToHome=true;
+    }
+  }
+
+  function deathCheck(){
+  if(temperatureBar.firePoints<=0){
+    sfx.death.play();
+
+    clearInterval(myGameArea.interval);
+
+    setDeathInterval();
+
+  }
+}
+
+function deathUpdate(){
+  myGameArea.clear();
+
+  myGameArea.adjust();
+  deathCircleHandler();
+}
+
+function setDeathInterval(){
+    myGameArea.interval = setInterval(deathUpdate, 20);
+  }
+  
+  //MOVEMENT --------------------------------------------
+  function moveUp(){
+  player.y-=15;
+}
+function moveDown(){
+  player.y+=15;
+}
+
+function moveLeft(){
+  player.x-= myGameArea.canvas.width - (99/100 * myGameArea.canvas.width);
+  player.relativeX = player.x/myGameArea.canvas.width*100;
+
+    if(!sfx.running.playing(sfx.running)){
+        let running = sfx.running.play();
+        sfx.running.volume(1);
+      }
+  }
+
+function moveRight(){
+  player.x+= myGameArea.canvas.width - (99/100 * myGameArea.canvas.width);
+  player.relativeX = player.x/myGameArea.canvas.width*100;
+
+  if(!sfx.running.playing(sfx.running)){
+        let running = sfx.running.play();
+        sfx.running.volume(1);
+      }}
+
+function getRandomX(){
+  return Math.floor(Math.random() * myGameArea.canvas.width); 
+}
+
+function keyboardHandler(){
+    if(myGameArea.keyState[65] && player.x>=10){
+      moveLeft();
+    } else if(myGameArea.keyState[68] && player.x <=myGameArea.canvas.width-player.width){
+      moveRight();
+    } else if(myGameArea.keyState[87]){
+      //moveUp();
+    } else if(myGameArea.keyState[83]){
+      //moveDown();
+    }
+  }
+
+  //DAY MANAGEMENT ---------------------------------------
+
+  function drawFloor(){
+    let ctx = myGameArea.context;
+    ctx.fillStyle = "#543533";
+    ctx.fillRect(0, 
+    myGameArea.canvas.height - (7/100 * myGameArea.canvas.height), 
+    ctx.canvas.width, 
+    ctx.canvas.height);
+  }
+
+  function updateBackgroundSizes(){
+    gameBackground.width = myGameArea.canvas.width;
+    gameBackground.height = myGameArea.canvas.height*1.8;
+    gameBackground.y = myGameArea.canvas.height/2 - (90/100 * myGameArea.canvas.height);
+
+    monsoonBackground.width = myGameArea.canvas.width;
+    monsoonBackground.height = myGameArea.canvas.height*1.8;
+    monsoonBackground.y = myGameArea.canvas.height/2 - (90/100 * myGameArea.canvas.height);
+  }
+
+  function updatePlayerCoords(){
+    player.x = (player.relativeX/100 * myGameArea.canvas.width);
+    player.y = myGameArea.canvas.height - (18/100 * myGameArea.canvas.height);
+    player.width = myGameArea.canvas.width - (92/100 * myGameArea.canvas.width);
+    player.height = myGameArea.canvas.width - (92/100 * myGameArea.canvas.width);
+  }
+
+  function updateFireballSizes(){
+    for(i=0 ; i<fireballs.length ; i++){
+      fireballs[i].width = myGameArea.canvas.width - (80/100 * myGameArea.canvas.width),
+      fireballs[i].height = myGameArea.canvas.height - (45/100 * myGameArea.canvas.height) 
+    }
+  }
+
+  //LOOP 
+  function update(){
+    updateBackgroundSizes();
+    updatePlayerCoords();
+    updateFireballSizes();
+
+    myGameArea.adjust();
+    myGameArea.clear();
+    myGameArea.context.beginPath();
+    
+    if(myGameArea.frameNo>60){
+      myGameArea.frameNo = 0;
+    }
+    myGameArea.frameNo++;
+
+    checkGameMusic();
+    
+    changeTime();
+    generateFireball();
+    deathCheck();
+    victoryCheck();
+
+    drawHandler();
+    announceDay();
+    collisionHandler();
+    keyboardHandler(); 
+  }
+
+  function checkGameMusic(){
+    if(!sfx.gameMusic.playing(sfx.gameMusic)){
+        let gameMusic = sfx.gameMusic.play();
+      }
+  }
+
+  function announceDay(){
+    if(dayManager.announceDay==true){
+      ctx = myGameArea.context;
+      ctx.font = `${myGameArea.canvas.height - (45/100 * myGameArea.canvas.height)}px Georgia`;
+      ctx.fillStyle = "#333";
+      ctx.fillText(`DAY ${dayManager.day}`, 
+      myGameArea.canvas.width - (92.5/100 * myGameArea.canvas.width), 
+      myGameArea.canvas.height - (35/100 * myGameArea.canvas.height));
+      
+      setTimeout(() => {
+        dayManager.announceDay=false;
+      }, "3000");
+    }
+  }
+
+  function drawMonsoon(){
+    if(dayManager.morning == false){
+      if(monsoonBackground.x < 0){
+        for(i = 0 ; i < myGameArea.canvas.height - (94/100 * myGameArea.canvas.height) ; i++){
+          if(monsoonBackground.x < 0){
+            monsoonBackground.x++;
+          }
+        }
+      }
+     monsoonBackground.drawPiece();
+    } else {
+      monsoonBackground.x = -myGameArea.canvas.width;  
+    }
+  }
+
+  function victoryUpdate(){
+    myGameArea.clear();
+    myGameArea.adjust();
+
+    victoryCircleHandler();
+  }
+
+  
+  let victoryCircle = {
+    radius:0
+  }
+
+  function victoryCircleHandler(){
+    sfx.fireball.stop();
+
+    setTimeout(() => {
+        clearInterval(myGameArea.interval);
+        victoryScreen();
+        myGameArea.interval = setInterval(restart, 20);
+      }, 1400);    
+
+  }
+
+  
+  function victoryScreen(){
+    ctx = myGameArea.context;
+    ctx.font = `${myGameArea.canvas.width - (86/100 * myGameArea.canvas.width)}px papyrus`;
+    
+    ctx.fillStyle = "#575";
+    ctx.fillText(`HARVEST`, 
+    myGameArea.canvas.width - (95/100 * myGameArea.canvas.width), 
+    myGameArea.canvas.height - (40/100 * myGameArea.canvas.height));
+
+    ctx.font = `${myGameArea.canvas.width - (98/100 * myGameArea.canvas.width)}px Georgia`;    
+    ctx.fillStyle = "white";
+    ctx.fillText(`(Press space to play again)`, 
+    myGameArea.canvas.width - (60/100 * myGameArea.canvas.width), 
+    myGameArea.canvas.height - (10/100 * myGameArea.canvas.height));    
+  }
+
+
+  function blackScreen(){
+    let ctx = myGameArea.context;
+    ctx.fillStyle="black";
+    ctx.fillRect(0, 0, myGameArea.canvas.width, myGameArea.canvas.height);
+
+    credits.victory();
+  }
+
+
+  function victoryCheck(){
+    if(dayManager.noMoreDays == true){
+      sfx.win.play();
+      clearInterval(myGameArea.interval);
+      myGameArea.interval = setInterval(victoryUpdate, 20);
+    }
+  }
+
+  function changeTime(){
+  if(dayManager.fireballCount <= 0 &&
+    dayManager.morning == true){
+      dayManager.morning = false;
+
+      setTimeout(() => {
+        sfx.fireball.stop();
+      }, 1200);
+    }
+
+    if(dayManager.morning == false){
+      dayManager.monsoon();
+    }
+
+}
+
+   //FIREBALL --------------------------------------------
+
+   function fireballDescend(fireball){
+    fireball.y += myGameArea.canvas.height - (97/100 * myGameArea.canvas.height);
+  }
+
+  function generateFireball(){
+    if((myGameArea.frameNo == 1 || everyInterval(dayManager.interval)) && dayManager.morning == true 
+    && dayManager.announceDay==false){
+      fireballs.push(new fireball(
+        myGameArea.canvas.width - (80/100 * myGameArea.canvas.width),
+        myGameArea.canvas.height - (45/100 * myGameArea.canvas.height), 
+        getRandomX(), 
+        -myGameArea.canvas.height - (45/100 * myGameArea.canvas.height), 
+        '/fball.png'))
+      sfx.fireball.play();
+    }
+  }
+
+  function drawHandler(){
+    gameBackground.drawPiece();
+    drawMonsoon();
+    drawFloor();
+
+    if(dayManager.morning == false){
+      dayManager.drawRain();
+    }
+
+    player.drawPiece();
+    
+    dayManager.drawDayText();
+    
+    for(let i = 0 ; i < fireballs.length ; i++){
+      fireballDescend(fireballs[i]);
+      if(fireballs[i].y > myGameArea.canvas.height*1.5){
+        fireballs.splice(i, 1);
+        dayManager.fireballCount--;
+      } else {
+        fireballs[i].drawPiece();
+      }
+    }
+    
+    temperatureBar.drawPiece();
+  }
+
+    //COLLISION --------------------------------------------------------
+
+    function gotHit(fireball, index){
+      sfx.gotHit.play();
+    if(temperatureBar.waterPoints>0){
+    temperatureBar.waterPoints-=30;
+    if(temperatureBar.waterPoints < 0){
+      temperatureBar.waterPoints=0;
+    }
+    } else {
+      if(temperatureBar.firePoints>0){
+        temperatureBar.firePoints-=30;
+        if(temperatureBar.firePoints<0){
+        temperatureBar.firePoints=0;
+      }
+      }
+    }
+
+    fireballs.splice(index, 1);
+    dayManager.fireballCount--;
+  }
+
+function collisionHandler(){
+  for(let i = 0 ; i < fireballs.length ; i++){
+      collisionCheck(player, fireballs[i], i);
+    }
+}
+
+</script>
+</body>
+</html>
