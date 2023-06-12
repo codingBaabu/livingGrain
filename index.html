@@ -22,70 +22,10 @@ canvas {
 </style>
 </head>
 <body onload="startGame()">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.1/howler.min.js" integrity="sha512-L6Z/YtIPQ7eU3BProP34WGU5yIRk7tNHk7vaC2dB1Vy1atz6wl9mCkTPPZ2Rn1qPr+vY2mZ9odZLdGYuaBk7dQ==" crossorigin="anonymous"></script>
 <script>
 
   //INIT -------------------------------------------------
 
-  var sfx = {
-    navigate:new Howl({
-      src:[
-        '/navigate.ogg'
-      ]
-    }),
-    select:new Howl({
-      src:[
-        '/select.ogg'
-      ]
-    }), 
-    death:new Howl({
-      src:[
-        '/deathSound.mp3'
-      ]
-    }), 
-    fireball:new Howl({
-      src:[
-        '/burning.mp3'
-      ],
-      volume:0.8
-    }),
-    gotHit:new Howl({
-      src:[
-        '/grunt.mp3'
-      ]
-    }),
-    rain:new Howl({
-      src:[
-        '/rain.mp3'
-      ]
-    }),
-    chirping:new Howl({
-      src:[
-        '/chirping.mp3'
-      ]
-    }),
-    gameMusic:new Howl({
-      src:[
-        '/gameMusic.mp3'
-      ]
-    }),
-    menuMusic:new Howl({
-      src:[
-        '/menuMusic.mp3',
-      ],
-      volume:1
-    }),
-    running:new Howl({
-      src:[
-        '/running.mp3'
-      ]
-    }),
-    win:new Howl({
-      src:[
-        '/win.mp3'
-      ]
-    })
-  }
   let homeScreenStart = {
     game:false,
     currentOption:0,
@@ -116,7 +56,6 @@ canvas {
     drawStartScreen();
 
     if(myGameArea.keyState[32]){
-      sfx.select.play();
       clearInterval(myGameArea.interval);
       setTimeout(()=> {
         myGameArea.interval = setInterval(homeScreen, 20);      
@@ -143,20 +82,11 @@ canvas {
 
   drawHomeScreen();
 
-  if(!sfx.menuMusic.playing(sfx.menuMusic)){
-    sfx.menuMusic.play();
-    sfx.menuMusic.stop();
-
-        let menuMusic = sfx.menuMusic.play();
-      }
-
   if(myGameArea.keyState[87] && homeScreenStart.switchOption==true){
-    sfx.navigate.play();
 
     homeScreenStart.switchOption= false;
     homeScreenStart.currentOption--;
   } else if(myGameArea.keyState[83] && homeScreenStart.switchOption==true){
-    sfx.navigate.play();
 
     homeScreenStart.switchOption= false;
     homeScreenStart.currentOption++;  
@@ -170,18 +100,14 @@ canvas {
   }
 
   if(myGameArea.keyState[32] && homeScreenStart.currentOption == 0){
-    sfx.select.play();
 
-    setTimeout(()=> {
-      sfx.menuMusic.stop();
-    }, 2000);
+   
 
     homeScreenStart.game = true;
     clearInterval(myGameArea.interval);
     myGameArea.start();
   } else if(myGameArea.keyState[32] && homeScreenStart.currentOption == 1 && homeScreenStart.switchOption==true){
     homeScreenStart.switchOption=false;
-    sfx.select.play();
     clearInterval(myGameArea.interval);
     myGameArea.interval = setInterval(drawHowToPlay, 20);  
   }    
@@ -412,8 +338,7 @@ function drawHomeScreen(){
   raindrops:[],
   setDay:function(){
     dayManager.playRainSound=true;
-    sfx.rain.stop();
-    sfx.chirping.play();
+   
 
     if(this.day==7){
       if(this.noMoreDays == false){
@@ -438,7 +363,6 @@ function drawHomeScreen(){
   monsoon:function(){
     if(this.playRainSound){
       this.playRainSound=false;
-      sfx.rain.play();
     }
     if((myGameArea.frameNo == 1 || everyInterval(this.monsoonInterval))){
       this.addWaterPoints++;
@@ -610,7 +534,6 @@ let credits = {
   }
 
   function deathCircleHandler(){
-    sfx.fireball.stop();
 
     ctx = myGameArea.context;
 
@@ -675,7 +598,6 @@ let credits = {
 
       dayManager.noMoreDays = false;
 
-      sfx.rain.stop();
 
       homeScreenStart.goToHome=true;
     }
@@ -683,7 +605,6 @@ let credits = {
 
   function deathCheck(){
   if(temperatureBar.firePoints<=0){
-    sfx.death.play();
 
     clearInterval(myGameArea.interval);
 
@@ -715,20 +636,14 @@ function moveLeft(){
   player.x-= myGameArea.canvas.width - (99/100 * myGameArea.canvas.width);
   player.relativeX = player.x/myGameArea.canvas.width*100;
 
-    if(!sfx.running.playing(sfx.running)){
-        let running = sfx.running.play();
-        sfx.running.volume(1);
-      }
+   
   }
 
 function moveRight(){
   player.x+= myGameArea.canvas.width - (99/100 * myGameArea.canvas.width);
   player.relativeX = player.x/myGameArea.canvas.width*100;
 
-  if(!sfx.running.playing(sfx.running)){
-        let running = sfx.running.play();
-        sfx.running.volume(1);
-      }}
+ }
 
 function getRandomX(){
   return Math.floor(Math.random() * myGameArea.canvas.width); 
@@ -796,7 +711,6 @@ function keyboardHandler(){
     }
     myGameArea.frameNo++;
 
-    checkGameMusic();
     
     changeTime();
     generateFireball();
@@ -809,11 +723,7 @@ function keyboardHandler(){
     keyboardHandler(); 
   }
 
-  function checkGameMusic(){
-    if(!sfx.gameMusic.playing(sfx.gameMusic)){
-        let gameMusic = sfx.gameMusic.play();
-      }
-  }
+ 
 
   function announceDay(){
     if(dayManager.announceDay==true){
@@ -858,7 +768,6 @@ function keyboardHandler(){
   }
 
   function victoryCircleHandler(){
-    sfx.fireball.stop();
 
     setTimeout(() => {
         clearInterval(myGameArea.interval);
@@ -897,7 +806,6 @@ function keyboardHandler(){
 
   function victoryCheck(){
     if(dayManager.noMoreDays == true){
-      sfx.win.play();
       clearInterval(myGameArea.interval);
       myGameArea.interval = setInterval(victoryUpdate, 20);
     }
@@ -909,7 +817,6 @@ function keyboardHandler(){
       dayManager.morning = false;
 
       setTimeout(() => {
-        sfx.fireball.stop();
       }, 1200);
     }
 
@@ -934,7 +841,6 @@ function keyboardHandler(){
         getRandomX(), 
         -myGameArea.canvas.height - (45/100 * myGameArea.canvas.height), 
         '/fball.png'))
-      sfx.fireball.play();
     }
   }
 
@@ -967,7 +873,6 @@ function keyboardHandler(){
     //COLLISION --------------------------------------------------------
 
     function gotHit(fireball, index){
-      sfx.gotHit.play();
     if(temperatureBar.waterPoints>0){
     temperatureBar.waterPoints-=30;
     if(temperatureBar.waterPoints < 0){
